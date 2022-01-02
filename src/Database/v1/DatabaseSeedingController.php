@@ -7,6 +7,7 @@ use Coco\SourceWatcherApi\Framework\ApiResponse;
 use Coco\SourceWatcherApi\Framework\Controller;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
 use Coco\SourceWatcherApi\Security\JWKSHelper;
+use DbConnectionSeeder;
 use DbConnectionTypeSeeder;
 use Dotenv\Dotenv;
 use Monolog\Handler\StreamHandler;
@@ -95,6 +96,9 @@ class DatabaseSeedingController extends Controller
         $seed = null;
 
         switch ( $table ) {
+            case 'db_connection':
+                $seed = self::getName( DbConnectionSeeder::class );
+                break;
             case 'db_connection_type':
                 $seed = self::getName( DbConnectionTypeSeeder::class );
                 break;
