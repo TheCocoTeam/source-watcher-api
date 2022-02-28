@@ -1,17 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Coco\SourceWatcherApi\Security\v1;
+namespace Coco\SourceWatcherApi\Security\JWKS\v1;
 
 use Coco\SourceWatcherApi\Framework\Controller;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
-use Coco\SourceWatcherApi\Security\JWKSHelper;
+use Coco\SourceWatcherApi\Security\JWKS\JWKSHelper;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-/**
- * Class JWKSController
- * @package Coco\SourceWatcherApi\Security
- */
 class JWKSController extends Controller
 {
     /**

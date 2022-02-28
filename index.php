@@ -22,9 +22,9 @@ $allowedControllers = [
     "api" => [
         "v1" => [
             ".well-known" => [
-                "jwks.json" => "Coco\\SourceWatcherApi\\Security\\v1\\JWKSController"
+                "jwks.json" => "Coco\\SourceWatcherApi\\Security\\JWKS\\v1\\JWKSController"
             ],
-            "credentials" => "Coco\\SourceWatcherApi\\Security\\v1\CredentialsController",
+            "credentials" => "Coco\\SourceWatcherApi\\Security\\v1\\CredentialsController",
             "database-seeding" => "Coco\\SourceWatcherApi\\Database\\v1\\DatabaseSeedingController",
             "item" => [
                 // api/v1/item or api/v1/item/
@@ -32,7 +32,8 @@ $allowedControllers = [
 
                 // api/v1/item/123
                 "/" . "^[0-9]+" . "/" => "Coco\\SourceWatcherApi\\Core\\Item\\ItemController"
-            ]
+            ],
+            "jwt" => "Coco\\SourceWatcherApi\\Security\\JWT\\v1\\JWTController"
         ]
     ]
 ];

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Coco\SourceWatcherApi\Security;
+namespace Coco\SourceWatcherApi\Security\User;
 
 use Coco\SourceWatcherApi\Framework\DAO;
 use Coco\SourceWatcherApi\Framework\Exception as FrameworkException;

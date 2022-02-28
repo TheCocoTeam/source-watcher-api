@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Coco\SourceWatcherApi\Security;
+namespace Coco\SourceWatcherApi\Security\JWKS;
 
 use Exception;
 use Firebase\JWT\JWT;
@@ -8,10 +8,6 @@ use Firebase\JWT\Key;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-/**
- * Class JWKSHelper
- * @package Coco\SourceWatcherApi\Security
- */
 class JWKSHelper
 {
     /**
@@ -39,14 +35,14 @@ class JWKSHelper
      * @return string
      */
     public function getPrivateKey(): string {
-        return file_get_contents( join( '/', [__DIR__, 'keys', 'current', 'private.pem'] ) );
+        return file_get_contents( join( '/', [__DIR__, '..', 'keys', 'current', 'private.pem'] ) );
     }
 
     /**
      * @return string
      */
     public function getPublicKey(): string {
-        return file_get_contents( join( '/', [__DIR__, 'keys', 'current', 'public.pem'] ) );
+        return file_get_contents( join( '/', [__DIR__, '..', 'keys', 'current', 'public.pem'] ) );
     }
 
     /**
@@ -58,7 +54,7 @@ class JWKSHelper
         $details = openssl_pkey_get_details(
             openssl_pkey_get_public(
                 file_get_contents(
-                    join( '/', [__DIR__, 'keys', 'current', 'public.pem'] )
+                    join( '/', [__DIR__, '..', 'keys', 'current', 'public.pem'] )
                 )
             )
         );

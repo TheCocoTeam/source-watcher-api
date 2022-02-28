@@ -6,7 +6,7 @@ use Coco\SourceWatcherApi\Database\DatabaseMigrator;
 use Coco\SourceWatcherApi\Framework\ApiResponse;
 use Coco\SourceWatcherApi\Framework\Controller;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
-use Coco\SourceWatcherApi\Security\JWKSHelper;
+use Coco\SourceWatcherApi\Security\JWKS\JWKSHelper;
 use DbConnectionSeeder;
 use DbConnectionTypeSeeder;
 use Dotenv\Dotenv;

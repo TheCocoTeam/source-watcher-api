@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Coco\SourceWatcherApi\Security;
+namespace Coco\SourceWatcherApi\Security\Refresh;
 
 use Coco\SourceWatcherApi\Framework\DAO;
 use Coco\SourceWatcherApi\Framework\Exception as FrameworkException;
@@ -26,7 +26,7 @@ class RefreshTokenDAO extends DAO
 
             $affectedRows = $statement->executeStatement();
 
-            $id = $connection->lastInsertId();
+            $id = (int) $connection->lastInsertId();
 
             $refreshToken = new RefreshToken();
             $refreshToken->setId( $id );
