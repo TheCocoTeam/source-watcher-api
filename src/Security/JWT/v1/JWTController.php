@@ -55,9 +55,7 @@ class JWTController extends Controller
         $jwtIsValid = $jwtHelper->jwtIsValid($jwt);
 
         if (!$jwtIsValid) {
-            $this->log->info(
-                sprintf('An invalid JWT was provided: %s', $jwt)
-            );
+            $this->log->info(sprintf('An invalid JWT was provided: %s', $jwt));
 
             return $this->makeResponse(ResponseCodes::UNAUTHORIZED, 'Invalid JWT');
         }

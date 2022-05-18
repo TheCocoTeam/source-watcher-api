@@ -131,7 +131,6 @@ if ($authenticationSettings[$className] == true) {
 
     if (empty($accessToken)) {
         $response = $object->makeResponse(ResponseCodes::BAD_REQUEST, 'Missing JWT');
-
         header($response['status_code_header']);
 
         if ($response['body']) {
@@ -139,21 +138,28 @@ if ($authenticationSettings[$className] == true) {
         }
 
         exit();
-    }
+    } else {
+        $jwtHelper = new JWTHelper();
+        $jwtIsValid = $jwtHelper->jwtIsValid($accessToken);
 
-    $jwtHelper = new JWTHelper();
-    $jwtIsValid = $jwtHelper->jwtIsValid($accessToken);
+        if (!$jwtIsValid) {
+            if (empty($refreshToken)) {
+                // No refresh token given, only access token
 
-    if (!$jwtIsValid) {
-        $response = $object->makeResponse(ResponseCodes::UNAUTHORIZED, 'Invalid JWT');
+                $response = $object->makeResponse(ResponseCodes::UNAUTHORIZED, 'Missing refresh token');
+                header($response['status_code_header']);
 
-        header($response['status_code_header']);
+                if ($response['body']) {
+                    echo $response['body'];
+                }
 
-        if ($response['body']) {
-            echo $response['body'];
+                exit();
+            } else {
+                // Attempt to get a new access token and refresh token
+
+
+            }
         }
-
-        exit();
     }
 }
 
