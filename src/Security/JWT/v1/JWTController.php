@@ -60,6 +60,6 @@ class JWTController extends Controller
             return $this->makeResponse(ResponseCodes::UNAUTHORIZED, 'Invalid JWT');
         }
 
-        return $this->makeResponse(ResponseCodes::OK);
+        return $this->makeResponse(ResponseCodes::OK, 'JWT is valid');
     }
 }
