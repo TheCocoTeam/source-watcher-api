@@ -52,8 +52,10 @@ $authenticationSettings = [
     CredentialsController::class => false,
     DatabaseSeedingController::class => true,
     DbConnectionTypeController::class => true,
+    ItemController::class => true,
     JWKSController::class => false,
-    JWTController::class => false
+    JWTController::class => false,
+    RefreshController::class => false,
 ];
 
 /**
