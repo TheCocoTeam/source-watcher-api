@@ -8,11 +8,21 @@
       "email": "jpruiz114@gmail.com"
     }
   ],
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../source-watcher-core",
+      "options": {
+        "symlink": true
+      }
+    }
+  ],
   "require": {
-    "php": ">=7.4",
+    "php": "^8.4",
+    "coco/source-watcher": "@dev",
     "doctrine/orm": "^2.9",
     "ext-pdo": "*",
-    "firebase/php-jwt": "^5.5.1",
+    "firebase/php-jwt": "^7.0",
     "monolog/monolog": "^2.3",
     "robmorgan/phinx": "^0.12.7",
     "vlucas/phpdotenv": "^5.3"
@@ -22,13 +32,11 @@
   },
   "autoload": {
     "psr-4": {
-      "Coco\\SourceWatcher\\": "core/src/",
       "Coco\\SourceWatcherApi\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Coco\\SourceWatcher\\": "core/src/",
       "Coco\\SourceWatcherApi\\": "src/",
       "Coco\\SourceWatcherApi\\Tests\\": "tests/"
     }

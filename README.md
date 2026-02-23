@@ -4,20 +4,16 @@ REST API for the [Source Watcher](https://github.com/TheCocoTeam/source-watcher)
 
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 8.4 or later
 - [Composer](https://getcomposer.org/)
 - MySQL (or compatible) database for the API’s own data (users, refresh tokens, items, db connections, etc.)
-- **Core dependency:** The API’s Composer autoload expects the Core library at `core/src/` (namespace `Coco\SourceWatcher\`). Copy or symlink [source-watcher-core](../source-watcher-core) into this project as `core/`, or use a Composer path repository so that `core/` is present when the API runs.
+- **Core:** The API declares [Source Watcher Core](../source-watcher-core) as a Composer path dependency (`../source-watcher-core`). Run `composer install` from the API directory **with the repo root as the workspace** so that path exists (e.g. from the monorepo root: `-w /app/source-watcher-api` and `/app` is the root containing both `source-watcher-api` and `source-watcher-core`).
 
 ## Installation
 
-1. Ensure Core is available at `core/` (see above).
+1. From the repo root (so `source-watcher-core` is a sibling of `source-watcher-api`), run Composer in the API directory. Example:  
+   `docker run --rm -v "$(pwd)":/app -w /app/source-watcher-api composer:2 sh -c "composer install --no-interaction --ignore-platform-reqs"`
 2. Copy `.env.example` to `.env` and set your database and driver values.
-3. Install dependencies:
-
-```bash
-composer install
-```
 
 ## Environment
 
@@ -71,7 +67,7 @@ Protected routes require `access_token` (and `refresh_token` when refreshing) in
 
 - `index.php` — Front controller: loads `.env`, runs migrations, routes to controllers.
 - `src/` — API code: `Framework/`, `Security/`, `Database/`, Phinx migrations under `src/phinx/`.
-- `core/` — Must contain [Source Watcher Core](../source-watcher-core) (see Requirements).
+- `vendor/coco/source-watcher/` — [Source Watcher Core](../source-watcher-core) installed via Composer path repo (symlink when possible).
 
 ## Current limitations
 
