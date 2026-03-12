@@ -1,17 +1,19 @@
 # API + MySQL. Run from this directory: docker compose up -d --build api
 # API: http://localhost:8181/  (board should point here for auth)
+# Build context is parent so Core is baked into the image; no host path needed at runtime.
 version: "3.7"
 services:
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: source-watcher-api/Dockerfile
     image: source-watcher-api:latest
     restart: always
     ports:
       - "8181:80"
     volumes:
-      - "./:/var/www/html"
+      # Persist transformations and output DBs on host so you see .source-watcher/test-jp.db etc.
+      - ./.source-watcher:/var/www/html/.source-watcher
     environment:
       DB_HOST: mysql
       DB_NAME: source_watcher

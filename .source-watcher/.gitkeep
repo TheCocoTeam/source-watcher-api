@@ -1,0 +1,4 @@
+#
+# Placeholder to keep the .source-watcher directory in git.
+# Actual contents (transformations, temp DBs, etc.) are ignored by .gitignore.
+

@@ -3,3 +3,5 @@ composer.phar
 core
 logs/*.log
 vendor
+.source-watcher/*
+!.source-watcher/.gitkeep

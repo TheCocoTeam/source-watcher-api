@@ -16,16 +16,76 @@ final class StepsConfig
     public static function getSteps(): array
     {
         return [
-            ['id' => 'extractor-1', 'type' => self::TYPE_EXTRACTOR, 'name' => 'CSV', 'object' => 'CsvExtractor'],
-            ['id' => 'extractor-2', 'type' => self::TYPE_EXTRACTOR, 'name' => 'Database', 'object' => 'DatabaseExtractor'],
-            ['id' => 'extractor-3', 'type' => self::TYPE_EXECUTION_EXTRACTOR, 'name' => 'Find Missing From Sequence', 'object' => 'FindMissingFromSequenceExtractor'],
-            ['id' => 'extractor-4', 'type' => self::TYPE_EXTRACTOR, 'name' => 'JSON', 'object' => 'JsonExtractor'],
-            ['id' => 'extractor-5', 'type' => self::TYPE_EXTRACTOR, 'name' => 'TXT', 'object' => 'TxtExtractor'],
-            ['id' => 'transformer-1', 'type' => self::TYPE_TRANSFORMER, 'name' => 'Convert Case', 'object' => 'ConvertCaseTransformer'],
-            ['id' => 'transformer-2', 'type' => self::TYPE_TRANSFORMER, 'name' => 'Guess Gender', 'object' => 'GuessGenderTransformer'],
-            ['id' => 'transformer-3', 'type' => self::TYPE_TRANSFORMER, 'name' => 'Java', 'object' => 'JavaTransformer'],
-            ['id' => 'transformer-4', 'type' => self::TYPE_TRANSFORMER, 'name' => 'Rename Columns', 'object' => 'RenameColumnsTransformer'],
-            ['id' => 'loader-1', 'type' => self::TYPE_LOADER, 'name' => 'Database', 'object' => 'DatabaseLoader'],
+            [
+                'id' => 'extractor-1',
+                'type' => self::TYPE_EXTRACTOR,
+                'name' => 'CSV',
+                'object' => 'CsvExtractor',
+                'description' => 'Extract rows from a CSV file using delimiter, enclosure, and optional column subset.'
+            ],
+            [
+                'id' => 'extractor-2',
+                'type' => self::TYPE_EXTRACTOR,
+                'name' => 'Database',
+                'object' => 'DatabaseExtractor',
+                'description' => 'Extract rows from a database table using a configured connection.'
+            ],
+            [
+                'id' => 'extractor-3',
+                'type' => self::TYPE_EXECUTION_EXTRACTOR,
+                'name' => 'Find Missing From Sequence',
+                'object' => 'FindMissingFromSequenceExtractor',
+                'description' => 'Given a numeric sequence, find which values are missing (execution-time extractor).'
+            ],
+            [
+                'id' => 'extractor-4',
+                'type' => self::TYPE_EXTRACTOR,
+                'name' => 'JSON',
+                'object' => 'JsonExtractor',
+                'description' => 'Extract data from JSON input, optionally selecting specific fields.'
+            ],
+            [
+                'id' => 'extractor-5',
+                'type' => self::TYPE_EXTRACTOR,
+                'name' => 'TXT',
+                'object' => 'TxtExtractor',
+                'description' => 'Extract lines from a plain text file as rows.'
+            ],
+            [
+                'id' => 'transformer-1',
+                'type' => self::TYPE_TRANSFORMER,
+                'name' => 'Convert Case',
+                'object' => 'ConvertCaseTransformer',
+                'description' => 'Change the case of column NAMES (upper, lower, title) without touching the values.'
+            ],
+            [
+                'id' => 'transformer-2',
+                'type' => self::TYPE_TRANSFORMER,
+                'name' => 'Guess Gender',
+                'object' => 'GuessGenderTransformer',
+                'description' => 'Add a gender column by guessing gender from a first-name field.'
+            ],
+            [
+                'id' => 'transformer-3',
+                'type' => self::TYPE_TRANSFORMER,
+                'name' => 'Java',
+                'object' => 'JavaTransformer',
+                'description' => 'Call custom Java code to transform each row using configured arguments.'
+            ],
+            [
+                'id' => 'transformer-4',
+                'type' => self::TYPE_TRANSFORMER,
+                'name' => 'Rename Columns',
+                'object' => 'RenameColumnsTransformer',
+                'description' => 'Rename columns according to a mapping of old_name -> new_name.'
+            ],
+            [
+                'id' => 'loader-1',
+                'type' => self::TYPE_LOADER,
+                'name' => 'Database',
+                'object' => 'DatabaseLoader',
+                'description' => 'Load rows into a database table using a configured connector (MySQL, PostgreSQL, SQLite).'
+            ],
         ];
     }
 }

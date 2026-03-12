@@ -4,9 +4,44 @@ error_reporting(E_ERROR | E_PARSE);
 
 require_once(__DIR__ . "/vendor/autoload.php");
 
+// Fallback for Coco\SourceWatcher (Core) when vendor symlink is broken (e.g. Docker without Core mount)
+$coreSrc = null;
+if (is_dir(__DIR__ . '/source-watcher-core/src')) {
+    $coreSrc = __DIR__ . '/source-watcher-core/src';
+} elseif (is_dir(__DIR__ . '/../source-watcher-core/src')) {
+    $coreSrc = __DIR__ . '/../source-watcher-core/src';
+}
+if ($coreSrc !== null) {
+    spl_autoload_register(function ($class) use ($coreSrc) {
+        if (strpos($class, 'Coco\\SourceWatcher\\') !== 0) {
+            return;
+        }
+        $relative = str_replace('Coco\\SourceWatcher\\', '', $class);
+        $relativePath = str_replace('\\', '/', $relative) . '.php';
+        $file = $coreSrc . '/' . $relativePath;
+        if (is_file($file)) {
+            require_once $file;
+            return;
+        }
+        // StepLoader uses textToPascalCase which lowercases segments (e.g. ConvertCase -> Convertcase); try case-insensitive match
+        $dir = $coreSrc . '/' . dirname($relativePath);
+        $want = basename($relativePath);
+        if (is_dir($dir)) {
+            foreach (scandir($dir) as $entry) {
+                if ($entry !== '.' && $entry !== '..' && strcasecmp($entry, $want) === 0) {
+                    require_once $dir . '/' . $entry;
+                    return;
+                }
+            }
+        }
+    }, true, true);
+}
+
 use Coco\SourceWatcherApi\Core\Item\ItemController;
 use Coco\SourceWatcherApi\Database\DatabaseMigrator;
+use Coco\SourceWatcherApi\Pipeline\v1\RunTransformationController;
 use Coco\SourceWatcherApi\Pipeline\v1\StepsController;
+use Coco\SourceWatcherApi\Pipeline\v1\TransformationController;
 use Coco\SourceWatcherApi\Database\v1\DatabaseSeedingController;
 use Coco\SourceWatcherApi\Database\v1\DbConnectionTypeController;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
@@ -61,6 +96,8 @@ $allowedControllers = [
             "logout" => LogoutController::class,
             "refresh-token" => RefreshController::class,
             "steps" => StepsController::class,
+            "transformation" => TransformationController::class,
+            "transformation-run" => RunTransformationController::class,
         ]
     ]
 ];
@@ -75,6 +112,8 @@ $authenticationSettings = [
     LogoutController::class => false,
     RefreshController::class => false,
     StepsController::class => false,
+    TransformationController::class => false,
+    RunTransformationController::class => true,
 ];
 
 /**
@@ -184,8 +223,8 @@ if (empty($className)) {
 $object = new $className();
 
 if ($authenticationSettings[$className] == true) {
-    $accessToken = $_REQUEST['access_token'];
-    $refreshToken = $_REQUEST['refresh_token'];
+    $accessToken = $_REQUEST['access_token'] ?? $_SERVER['HTTP_X_ACCESS_TOKEN'] ?? '';
+    $refreshToken = $_REQUEST['refresh_token'] ?? $_SERVER['HTTP_X_REFRESH_TOKEN'] ?? '';
 
     if (empty($accessToken)) {
         $response = $object->makeResponse(ResponseCodes::BAD_REQUEST, 'Missing JWT');
@@ -221,5 +260,18 @@ if ($authenticationSettings[$className] == true) {
     }
 }
 
-$object->setRequestData($_REQUEST);
+// Merge JSON body into request data so POST with Content-Type: application/json is available to controllers
+$requestData = $_REQUEST;
+$contentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? $_SERVER['CONTENT_TYPE'] ?? '';
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'PATCH'], true)
+    && (strpos($contentType, 'application/json') !== false)) {
+    $rawBody = file_get_contents('php://input');
+    if ($rawBody !== false && $rawBody !== '') {
+        $decoded = json_decode($rawBody, true);
+        if (is_array($decoded)) {
+            $requestData = array_merge($requestData, $decoded);
+        }
+    }
+}
+$object->setRequestData($requestData);
 $object->processRequest($_SERVER["REQUEST_METHOD"], [$requestedEndpoint[1]]);
