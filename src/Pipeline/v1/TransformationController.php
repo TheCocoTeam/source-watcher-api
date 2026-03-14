@@ -24,7 +24,13 @@ class TransformationController extends Controller
     public function processRequest(string $requestMethod, array $extraOptions): void
     {
         if ($requestMethod === 'GET') {
-            $this->listTransformations();
+            $requestData = $this->getRequestData();
+            $name = isset($requestData['name']) ? trim((string) $requestData['name']) : null;
+            if ($name !== null && $name !== '') {
+                $this->getTransformationByName($name);
+            } else {
+                $this->listTransformations();
+            }
             return;
         }
         if ($requestMethod !== 'POST') {
@@ -49,6 +55,69 @@ class TransformationController extends Controller
         return (is_dir($transformationsDirectory) || @mkdir($transformationsDirectory, 0777, true))
             ? $transformationsDirectory
             : null;
+    }
+
+    private function getTransformationByName(string $name): void
+    {
+        if (preg_match('/[^a-zA-Z0-9_\-]/', $name)) {
+            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation name may only contain letters, numbers, underscores, and hyphens.');
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+            return;
+        }
+
+        $transformationsDirectory = $this->getTransformationsDirectory();
+        if ($transformationsDirectory === null) {
+            $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+            return;
+        }
+
+        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
+        if (!is_file($filePath) || !is_readable($filePath)) {
+            $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+            return;
+        }
+
+        $json = file_get_contents($filePath);
+        $decoded = $json !== false ? json_decode($json, true) : null;
+
+        if ($decoded === null) {
+            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation file is invalid.');
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+            return;
+        }
+
+        if (isset($decoded['steps']) && is_array($decoded['steps'])) {
+            $payload = ['name' => $name, 'steps' => $decoded['steps']];
+        } elseif (is_array($decoded)) {
+            $payload = ['name' => $name, 'steps' => $decoded];
+        } else {
+            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation file is invalid.');
+            header($response['status_code_header']);
+            if ($response['body']) {
+                echo $response['body'];
+            }
+            return;
+        }
+
+        $response = $this->makeArrayResponse(ResponseCodes::OK, $payload);
+        header($response['status_code_header']);
+        if ($response['body']) {
+            echo $response['body'];
+        }
     }
 
     private function listTransformations(): void
