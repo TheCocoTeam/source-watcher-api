@@ -14,15 +14,11 @@ use Coco\SourceWatcherApi\Framework\Controller;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
 
 /**
- * Run a saved transformation by name.
+ * Run a transformation: either by name (saved .swt file) or by inline steps (current canvas).
  *
- * Reads the .swt file from .source-watcher/transformations/<name>.swt,
- * builds a SourceWatcher pipeline from the step definitions, and executes it.
- *
- * Expected JSON payload:
- * {
- *   "name": "transformation-name"   // required; filename without .swt
- * }
+ * Expected JSON payload (one of):
+ *   { "name": "transformation-name" }   — run saved transformation
+ *   { "steps": [ { "type", "name", "options" }, ... ] }   — run inline steps (current canvas)
  */
 class RunTransformationController extends Controller
 {
@@ -51,55 +47,66 @@ class RunTransformationController extends Controller
             return;
         }
 
-        $name = $data['name'] ?? null;
-        if (!is_string($name) || trim($name) === '') {
-            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Field "name" is required and must be a non-empty string.');
-            header($response['status_code_header']);
-            if ($response['body']) {
-                echo $response['body'];
-            }
+        $steps = $data['steps'] ?? null;
+        $name = isset($data['name']) && is_string($data['name']) ? trim($data['name']) : null;
+
+        if (is_array($steps) && $steps !== []) {
+            $this->executeRun($steps, null);
             return;
         }
 
-        $name = trim($name);
-        if (preg_match('/[^a-zA-Z0-9_\-]/', $name)) {
-            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation name may only contain letters, numbers, underscores, and hyphens.');
-            header($response['status_code_header']);
-            if ($response['body']) {
-                echo $response['body'];
+        if ($name !== null && $name !== '') {
+            if (preg_match('/[^a-zA-Z0-9_\-]/', $name)) {
+                $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation name may only contain letters, numbers, underscores, and hyphens.');
+                header($response['status_code_header']);
+                if ($response['body']) {
+                    echo $response['body'];
+                }
+                return;
             }
+
+            $home = $_SERVER['HOME'] ?? getenv('HOME') ?: null;
+            if (empty($home)) {
+                $home = dirname(__DIR__, 3);
+            }
+
+            $transformationsDirectory = $home . DIRECTORY_SEPARATOR . '.source-watcher' . DIRECTORY_SEPARATOR . 'transformations';
+            $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
+
+            if (!is_file($filePath) || !is_readable($filePath)) {
+                $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
+                header($response['status_code_header']);
+                if ($response['body']) {
+                    echo $response['body'];
+                }
+                return;
+            }
+
+            $json = file_get_contents($filePath);
+            $steps = $json !== false ? json_decode($json, true) : null;
+
+            if (!is_array($steps) || $steps === []) {
+                $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation file is empty or invalid.');
+                header($response['status_code_header']);
+                if ($response['body']) {
+                    echo $response['body'];
+                }
+                return;
+            }
+
+            $this->executeRun($steps, $name);
             return;
         }
 
-        $home = $_SERVER['HOME'] ?? getenv('HOME') ?: null;
-        if (empty($home)) {
-            $home = dirname(__DIR__, 3);
+        $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Either "name" (saved transformation) or "steps" (inline) is required.');
+        header($response['status_code_header']);
+        if ($response['body']) {
+            echo $response['body'];
         }
+    }
 
-        $transformationsDirectory = $home . DIRECTORY_SEPARATOR . '.source-watcher' . DIRECTORY_SEPARATOR . 'transformations';
-        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
-
-        if (!is_file($filePath) || !is_readable($filePath)) {
-            $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
-            header($response['status_code_header']);
-            if ($response['body']) {
-                echo $response['body'];
-            }
-            return;
-        }
-
-        $json = file_get_contents($filePath);
-        $steps = json_decode($json, true);
-
-        if (!is_array($steps) || $steps === []) {
-            $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation file is empty or invalid.');
-            header($response['status_code_header']);
-            if ($response['body']) {
-                echo $response['body'];
-            }
-            return;
-        }
-
+    private function executeRun(array $steps, ?string $name): void
+    {
         try {
             $this->runPipeline($steps);
         } catch (SourceWatcherException $e) {
@@ -124,10 +131,11 @@ class RunTransformationController extends Controller
             return;
         }
 
-        $response = $this->makeArrayResponse(ResponseCodes::OK, [
-            'message' => 'Transformation ran successfully.',
-            'name' => $name,
-        ]);
+        $payload = ['message' => 'Transformation ran successfully.'];
+        if ($name !== null) {
+            $payload['name'] = $name;
+        }
+        $response = $this->makeArrayResponse(ResponseCodes::OK, $payload);
         header($response['status_code_header']);
         if ($response['body']) {
             echo $response['body'];
@@ -212,7 +220,6 @@ class RunTransformationController extends Controller
                 default => MB_CASE_TITLE,
             }
             : (int) $mode;
-        echo print_r($options, true);
         return $options;
     }
 
