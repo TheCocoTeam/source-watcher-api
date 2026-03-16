@@ -1,13 +1,13 @@
 # Source Watcher API
 
-REST API for the [Source Watcher](https://github.com/TheCocoTeam/source-watcher) project. It provides authentication (JWT + refresh tokens), database migrations, and HTTP endpoints used by [Source Watcher Board](../source-watcher-board) and other clients. The API uses [Source Watcher Core](../source-watcher-core) for ETL pipelines when that functionality is wired in.
+REST API for the [Source Watcher](https://github.com/TheCocoTeam/source-watcher-dev-env) project. It provides authentication (JWT + refresh tokens), database migrations, and HTTP endpoints used by [Source Watcher Board](https://github.com/TheCocoTeam/source-watcher-board) and other clients. The API uses [Source Watcher Core](https://github.com/TheCocoTeam/source-watcher-core) for ETL pipelines when that functionality is wired in.
 
 ## Requirements
 
 - PHP 8.4 or later
 - [Composer](https://getcomposer.org/)
 - MySQL (or compatible) database for the API’s own data (users, refresh tokens, items, db connections, etc.)
-- **Core:** The API declares [Source Watcher Core](../source-watcher-core) as a Composer path dependency (`../source-watcher-core`). Run `composer install` from the API directory **with the repo root as the workspace** so that path exists (e.g. from the monorepo root: `-w /app/source-watcher-api` and `/app` is the root containing both `source-watcher-api` and `source-watcher-core`).
+- **Core:** The API declares [Source Watcher Core](https://github.com/TheCocoTeam/source-watcher-core) as a Composer path dependency (`../source-watcher-core` in a combined checkout). Run `composer install` from the API directory **with the repo root as the workspace** so that path exists (e.g. from the dev-env root: `-w /app/source-watcher-api` and `/app` is the root containing both `source-watcher-api` and `source-watcher-core`).
 
 ## Installation
 
@@ -86,7 +86,7 @@ Protected routes require `access_token` (and `refresh_token` when refreshing) in
 
 - `index.php` — Front controller: loads `.env`, runs migrations, routes to controllers.
 - `src/` — API code: `Framework/`, `Security/`, `Database/`, Phinx migrations under `src/phinx/`.
-- `vendor/coco/source-watcher/` — [Source Watcher Core](../source-watcher-core) installed via Composer path repo (symlink when possible).
+- `vendor/coco/source-watcher/` — [Source Watcher Core](https://github.com/TheCocoTeam/source-watcher-core) installed via Composer path repo (symlink when possible).
 
 ## Current limitations
 
