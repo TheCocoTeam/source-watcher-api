@@ -198,6 +198,18 @@ class RunTransformationController extends Controller
                             $extractorOptions['columns'] = $options['columns'];
                         }
                         $sourceWatcher->extract('Json', $input, $extractorOptions);
+                    } elseif ($name === 'Txt') {
+                        $filePath = $options['filePath'] ?? '';
+                        if ($filePath === '') {
+                            throw new SourceWatcherException('Txt extractor requires options.filePath.');
+                        }
+                        $input = new FileInput($filePath);
+                        $extractorOptions = [];
+                        $column = isset($options['column']) && is_string($options['column']) ? trim($options['column']) : '';
+                        if ($column !== '') {
+                            $extractorOptions['column'] = $column;
+                        }
+                        $sourceWatcher->extract('Txt', $input, $extractorOptions);
                     } else {
                         throw new SourceWatcherException('Unsupported extractor: ' . $name);
                     }
