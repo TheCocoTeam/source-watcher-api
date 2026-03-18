@@ -210,6 +210,46 @@ class RunTransformationController extends Controller
                             $extractorOptions['column'] = $column;
                         }
                         $sourceWatcher->extract('Txt', $input, $extractorOptions);
+                    } elseif ($name === 'Database') {
+                        $driver = $options['driver'] ?? 'pdo_mysql';
+                        $query = isset($options['query']) && is_string($options['query']) ? trim($options['query']) : '';
+                        if ($query === '') {
+                            throw new SourceWatcherException('Database extractor requires options.query (SQL).');
+                        }
+
+                        if ($driver === 'pdo_sqlite') {
+                            $connector = new SqliteConnector();
+                            $path = isset($options['path']) && is_string($options['path']) ? trim($options['path']) : '';
+                            $memory = !empty($options['memory']);
+                            if (!$memory && $path === '') {
+                                throw new SourceWatcherException('Database extractor (SQLite) requires options.path or memory=true.');
+                            }
+                            if ($memory) {
+                                $connector->setMemory(true);
+                            } else {
+                                $connector->setPath($path);
+                                $connector->setMemory(false);
+                            }
+                        } elseif ($driver === 'pdo_pgsql' || $driver === 'pdo_mysql') {
+                            $connector = $driver === 'pdo_pgsql' ? new PostgreSqlConnector() : new MySqlConnector();
+                            $host = isset($options['host']) && is_string($options['host']) ? trim($options['host']) : '';
+                            $database = isset($options['database']) && is_string($options['database']) ? trim($options['database']) : (isset($options['dbName']) && is_string($options['dbName']) ? trim($options['dbName']) : '');
+                            $user = isset($options['user']) && is_string($options['user']) ? trim($options['user']) : '';
+                            if ($host === '' || $database === '' || $user === '') {
+                                throw new SourceWatcherException('Database extractor requires options.host, options.database, and options.user for ' . $driver . '.');
+                            }
+                            $port = isset($options['port']) ? (int) $options['port'] : ($driver === 'pdo_pgsql' ? 5432 : 3306);
+                            $connector->setHost($host);
+                            $connector->setPort($port);
+                            $connector->setDbName($database);
+                            $connector->setUser($user);
+                            $connector->setPassword(isset($options['password']) && is_string($options['password']) ? $options['password'] : '');
+                        } else {
+                            throw new SourceWatcherException('Unsupported database driver for extractor: ' . $driver);
+                        }
+
+                        $input = new \Coco\SourceWatcher\Core\IO\Inputs\DatabaseInput($connector);
+                        $sourceWatcher->extract('Database', $input, ['query' => $query]);
                     } else {
                         throw new SourceWatcherException('Unsupported extractor: ' . $name);
                     }
