@@ -24,6 +24,13 @@ class RunTransformationController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Temp SQLite DB files downloaded from remote URLs.
+     *
+     * @var array<int, string>
+     */
+    private array $downloadedSqliteTempFiles = [];
+
     public function processRequest(string $requestMethod, array $extraOptions): void
     {
         if ($requestMethod !== 'POST') {
@@ -164,8 +171,10 @@ class RunTransformationController extends Controller
     private function runPipeline(array $steps): void
     {
         $sourceWatcher = new SourceWatcher();
+        $this->downloadedSqliteTempFiles = [];
 
-        foreach ($steps as $index => $step) {
+        try {
+            foreach ($steps as $index => $step) {
             $type = $step['type'] ?? '';
             $name = (string) ($step['name'] ?? '');
             $options = $step['options'] ?? [];
@@ -227,7 +236,7 @@ class RunTransformationController extends Controller
                             if ($memory) {
                                 $connector->setMemory(true);
                             } else {
-                                $connector->setPath($path);
+                                $connector->setPath($this->resolveSqlitePath($path));
                                 $connector->setMemory(false);
                             }
                         } elseif ($driver === 'pdo_pgsql' || $driver === 'pdo_mysql') {
@@ -278,9 +287,62 @@ class RunTransformationController extends Controller
             } catch (\Throwable $e) {
                 throw new StepFailureException($e->getMessage(), $index, $name, $e);
             }
+            }
+
+            $sourceWatcher->run();
+        } finally {
+            // Best-effort cleanup: remove any downloaded SQLite DB temp files.
+            foreach ($this->downloadedSqliteTempFiles as $tmpPath) {
+                if (is_string($tmpPath) && $tmpPath !== '' && is_file($tmpPath)) {
+                    @unlink($tmpPath);
+                }
+            }
+            $this->downloadedSqliteTempFiles = [];
+        }
+    }
+
+    private function resolveSqlitePath(string $path): string
+    {
+        $location = trim($path);
+        if ($location === '') {
+            return $location;
         }
 
-        $sourceWatcher->run();
+        if ($this->isHttpUrl($location)) {
+            return $this->downloadSqliteUrlToTempFile($location);
+        }
+
+        // Local filesystem path.
+        return $location;
+    }
+
+    private function isHttpUrl(string $location): bool
+    {
+        return str_starts_with($location, 'http://') || str_starts_with($location, 'https://');
+    }
+
+    private function downloadSqliteUrlToTempFile(string $url): string
+    {
+        $content = @file_get_contents($url);
+        if ($content === false) {
+            throw new SourceWatcherException(
+                'Failed to download SQLite database from URL. Ensure allow_url_fopen is enabled: ' . $url
+            );
+        }
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'sw-sqlite-');
+        if (!is_string($tmpPath) || $tmpPath === '') {
+            throw new SourceWatcherException('Failed to create a temporary file for SQLite download.');
+        }
+
+        $bytes = @file_put_contents($tmpPath, $content);
+        if ($bytes === false) {
+            @unlink($tmpPath);
+            throw new SourceWatcherException('Failed to write temporary SQLite download file.');
+        }
+
+        $this->downloadedSqliteTempFiles[] = $tmpPath;
+        return $tmpPath;
     }
 
     /**
@@ -320,7 +382,7 @@ class RunTransformationController extends Controller
                 $connector->setMemory(true);
             } else {
                 $path = $options['path'] ?? ':memory:';
-                $connector->setPath($path);
+                $connector->setPath($this->resolveSqlitePath($path));
                 $connector->setMemory(false);
             }
             return new DatabaseOutput($connector);
