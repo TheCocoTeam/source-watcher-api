@@ -24,6 +24,13 @@ class RunTransformationController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Temp SQLite DB files downloaded from remote URLs.
+     *
+     * @var array<int, string>
+     */
+    private array $downloadedSqliteTempFiles = [];
+
     public function processRequest(string $requestMethod, array $extraOptions): void
     {
         if ($requestMethod !== 'POST') {
@@ -164,8 +171,10 @@ class RunTransformationController extends Controller
     private function runPipeline(array $steps): void
     {
         $sourceWatcher = new SourceWatcher();
+        $this->downloadedSqliteTempFiles = [];
 
-        foreach ($steps as $index => $step) {
+        try {
+            foreach ($steps as $index => $step) {
             $type = $step['type'] ?? '';
             $name = (string) ($step['name'] ?? '');
             $options = $step['options'] ?? [];
@@ -210,6 +219,46 @@ class RunTransformationController extends Controller
                             $extractorOptions['column'] = $column;
                         }
                         $sourceWatcher->extract('Txt', $input, $extractorOptions);
+                    } elseif ($name === 'Database') {
+                        $driver = $options['driver'] ?? 'pdo_mysql';
+                        $query = isset($options['query']) && is_string($options['query']) ? trim($options['query']) : '';
+                        if ($query === '') {
+                            throw new SourceWatcherException('Database extractor requires options.query (SQL).');
+                        }
+
+                        if ($driver === 'pdo_sqlite') {
+                            $connector = new SqliteConnector();
+                            $path = isset($options['path']) && is_string($options['path']) ? trim($options['path']) : '';
+                            $memory = !empty($options['memory']);
+                            if (!$memory && $path === '') {
+                                throw new SourceWatcherException('Database extractor (SQLite) requires options.path or memory=true.');
+                            }
+                            if ($memory) {
+                                $connector->setMemory(true);
+                            } else {
+                                $connector->setPath($this->resolveSqlitePath($path));
+                                $connector->setMemory(false);
+                            }
+                        } elseif ($driver === 'pdo_pgsql' || $driver === 'pdo_mysql') {
+                            $connector = $driver === 'pdo_pgsql' ? new PostgreSqlConnector() : new MySqlConnector();
+                            $host = isset($options['host']) && is_string($options['host']) ? trim($options['host']) : '';
+                            $database = isset($options['database']) && is_string($options['database']) ? trim($options['database']) : (isset($options['dbName']) && is_string($options['dbName']) ? trim($options['dbName']) : '');
+                            $user = isset($options['user']) && is_string($options['user']) ? trim($options['user']) : '';
+                            if ($host === '' || $database === '' || $user === '') {
+                                throw new SourceWatcherException('Database extractor requires options.host, options.database, and options.user for ' . $driver . '.');
+                            }
+                            $port = isset($options['port']) ? (int) $options['port'] : ($driver === 'pdo_pgsql' ? 5432 : 3306);
+                            $connector->setHost($host);
+                            $connector->setPort($port);
+                            $connector->setDbName($database);
+                            $connector->setUser($user);
+                            $connector->setPassword(isset($options['password']) && is_string($options['password']) ? $options['password'] : '');
+                        } else {
+                            throw new SourceWatcherException('Unsupported database driver for extractor: ' . $driver);
+                        }
+
+                        $input = new \Coco\SourceWatcher\Core\IO\Inputs\DatabaseInput($connector);
+                        $sourceWatcher->extract('Database', $input, ['query' => $query]);
                     } else {
                         throw new SourceWatcherException('Unsupported extractor: ' . $name);
                     }
@@ -238,9 +287,62 @@ class RunTransformationController extends Controller
             } catch (\Throwable $e) {
                 throw new StepFailureException($e->getMessage(), $index, $name, $e);
             }
+            }
+
+            $sourceWatcher->run();
+        } finally {
+            // Best-effort cleanup: remove any downloaded SQLite DB temp files.
+            foreach ($this->downloadedSqliteTempFiles as $tmpPath) {
+                if (is_string($tmpPath) && $tmpPath !== '' && is_file($tmpPath)) {
+                    @unlink($tmpPath);
+                }
+            }
+            $this->downloadedSqliteTempFiles = [];
+        }
+    }
+
+    private function resolveSqlitePath(string $path): string
+    {
+        $location = trim($path);
+        if ($location === '') {
+            return $location;
         }
 
-        $sourceWatcher->run();
+        if ($this->isHttpUrl($location)) {
+            return $this->downloadSqliteUrlToTempFile($location);
+        }
+
+        // Local filesystem path.
+        return $location;
+    }
+
+    private function isHttpUrl(string $location): bool
+    {
+        return str_starts_with($location, 'http://') || str_starts_with($location, 'https://');
+    }
+
+    private function downloadSqliteUrlToTempFile(string $url): string
+    {
+        $content = @file_get_contents($url);
+        if ($content === false) {
+            throw new SourceWatcherException(
+                'Failed to download SQLite database from URL. Ensure allow_url_fopen is enabled: ' . $url
+            );
+        }
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'sw-sqlite-');
+        if (!is_string($tmpPath) || $tmpPath === '') {
+            throw new SourceWatcherException('Failed to create a temporary file for SQLite download.');
+        }
+
+        $bytes = @file_put_contents($tmpPath, $content);
+        if ($bytes === false) {
+            @unlink($tmpPath);
+            throw new SourceWatcherException('Failed to write temporary SQLite download file.');
+        }
+
+        $this->downloadedSqliteTempFiles[] = $tmpPath;
+        return $tmpPath;
     }
 
     /**
@@ -280,7 +382,7 @@ class RunTransformationController extends Controller
                 $connector->setMemory(true);
             } else {
                 $path = $options['path'] ?? ':memory:';
-                $connector->setPath($path);
+                $connector->setPath($this->resolveSqlitePath($path));
                 $connector->setMemory(false);
             }
             return new DatabaseOutput($connector);
