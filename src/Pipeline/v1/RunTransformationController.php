@@ -265,6 +265,19 @@ class RunTransformationController extends Controller
                     continue;
                 }
 
+                if ($type === 'execution-extractor') {
+                    if ($name === 'FindMissingFromSequence') {
+                        $filterField = isset($options['filterField']) && is_string($options['filterField']) ? trim($options['filterField']) : 'id';
+                        if ($filterField === '') {
+                            $filterField = 'id';
+                        }
+                        $sourceWatcher->extract('FindMissingFromSequence', null, ['filterField' => $filterField]);
+                    } else {
+                        throw new SourceWatcherException('Unsupported execution extractor: ' . $name);
+                    }
+                    continue;
+                }
+
                 if ($type === 'transformer') {
                     if (strtolower($name) === 'convertcase') {
                         $options = $this->normalizeConvertCaseMode($options);
