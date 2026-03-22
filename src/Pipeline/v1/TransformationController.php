@@ -10,11 +10,11 @@ use Coco\SourceWatcherApi\Framework\ResponseCodes;
  * Transformations API:
  *
  * GET  /api/v1/transformation
- *     Returns list of saved transformation names (basenames of .swt files).
- *     Response: { "names": ["test07", "my-pipeline", ...] }
+ *     Returns list of saved transformation names (basenames of .json pipeline files).
+ *     Response: { "names": ["my-pipeline", ...] }
  *
  * POST /api/v1/transformation
- *     Save a transformation definition (.swt file) given a list of steps.
+ *     Save a transformation definition (.json pipeline file) given a list of steps.
  *     Expected JSON: { "name": "optional", "steps": [ ... ] }
  */
 class TransformationController extends Controller
@@ -78,7 +78,7 @@ class TransformationController extends Controller
             return;
         }
 
-        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
+        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.json';
         if (!is_file($filePath) || !is_readable($filePath)) {
             $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
             header($response['status_code_header']);
@@ -138,8 +138,8 @@ class TransformationController extends Controller
                 if ($file === '.' || $file === '..') {
                     continue;
                 }
-                if (substr($file, -4) === '.swt' && is_file($transformationsDirectory . DIRECTORY_SEPARATOR . $file)) {
-                    $names[] = substr($file, 0, -4);
+                if (substr($file, -5) === '.json' && is_file($transformationsDirectory . DIRECTORY_SEPARATOR . $file)) {
+                    $names[] = substr($file, 0, -5);
                 }
             }
         }
@@ -188,9 +188,13 @@ class TransformationController extends Controller
 
         $name = is_string($name) ? trim($name) : null;
 
-        // Persist the steps array as JSON, following the same directory structure
-        // as Coco\SourceWatcher\Core\Pipeline\SourceWatcher::save().
-        $jsonRepresentation = json_encode($steps, JSON_PRETTY_PRINT);
+        // Persist the pipeline as a JSON object with a $schema reference, following the same
+        // directory structure as Coco\SourceWatcher\Core\Pipeline\SourceWatcher::save().
+        $pipeline = [
+            '$schema' => 'https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/main/pipeline.schema.json',
+            'steps'   => $steps,
+        ];
+        $jsonRepresentation = json_encode($pipeline, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         $transformationsDirectory = $this->getTransformationsDirectory();
         if ($transformationsDirectory === null) {
@@ -207,7 +211,7 @@ class TransformationController extends Controller
             $name = 'transformation_' . bin2hex(random_bytes(8));
         }
 
-        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
+        $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.json';
 
         if (@file_put_contents($filePath, $jsonRepresentation) === false) {
             $response = $this->makeResponse(ResponseCodes::INTERNAL_SERVER_ERROR, 'Unable to write transformation file.');

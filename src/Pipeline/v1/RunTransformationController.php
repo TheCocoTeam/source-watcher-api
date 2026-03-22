@@ -14,7 +14,7 @@ use Coco\SourceWatcherApi\Framework\Controller;
 use Coco\SourceWatcherApi\Framework\ResponseCodes;
 
 /**
- * Run a transformation: either by name (saved .swt file) or by inline steps (current canvas).
+ * Run a transformation: either by name (saved .json pipeline file) or by inline steps (current canvas).
  *
  * Expected JSON payload (one of):
  *   { "name": "transformation-name" }   — run saved transformation
@@ -78,7 +78,7 @@ class RunTransformationController extends Controller
             }
 
             $transformationsDirectory = $home . DIRECTORY_SEPARATOR . '.source-watcher' . DIRECTORY_SEPARATOR . 'transformations';
-            $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.swt';
+            $filePath = $transformationsDirectory . DIRECTORY_SEPARATOR . $name . '.json';
 
             if (!is_file($filePath) || !is_readable($filePath)) {
                 $response = $this->makeResponse(ResponseCodes::NOT_FOUND, 'Transformation not found: ' . $name);
@@ -90,7 +90,16 @@ class RunTransformationController extends Controller
             }
 
             $json = file_get_contents($filePath);
-            $steps = $json !== false ? json_decode($json, true) : null;
+            $decoded = $json !== false ? json_decode($json, true) : null;
+
+            // Support both the legacy bare-array format and the new envelope format {$schema, steps}.
+            if (is_array($decoded) && isset($decoded['steps']) && is_array($decoded['steps'])) {
+                $steps = $decoded['steps'];
+            } elseif (is_array($decoded) && !array_key_exists('steps', $decoded)) {
+                $steps = $decoded;
+            } else {
+                $steps = null;
+            }
 
             if (!is_array($steps) || $steps === []) {
                 $response = $this->makeResponse(ResponseCodes::BAD_REQUEST, 'Transformation file is empty or invalid.');
@@ -162,7 +171,7 @@ class RunTransformationController extends Controller
     }
 
     /**
-     * Build and execute a SourceWatcher pipeline from a steps array (same shape as .swt).
+     * Build and execute a SourceWatcher pipeline from a steps array (same shape as the "steps" field in a .json pipeline file).
      *
      * @param array<int, array{type: string, name: string, options?: array}> $steps
      * @throws SourceWatcherException

@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/main/pipeline.schema.json",
+  "title": "Source Watcher Pipeline",
+  "description": "A Source Watcher pipeline definition: an ordered list of extractor, transformer, and loader steps.",
+  "type": "object",
+  "required": ["steps"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for this file."
+    },
+    "steps": {
+      "type": "array",
+      "description": "Ordered list of pipeline steps. Must contain at least one extractor and one loader.",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/step"
+      }
+    }
+  },
+  "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["extractor", "execution-extractor", "transformer", "loader"],
+          "description": "The role of this step in the pipeline."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The core step name (e.g. Csv, Json, ConvertCase, Database)."
+        },
+        "options": {
+          "type": "object",
+          "description": "Step-specific configuration options.",
+          "additionalProperties": true
+        },
+        "x": {
+          "type": "number",
+          "description": "Canvas X position (used by the board UI, ignored by the API)."
+        },
+        "y": {
+          "type": "number",
+          "description": "Canvas Y position (used by the board UI, ignored by the API)."
+        }
+      }
+    }
+  }
+}
