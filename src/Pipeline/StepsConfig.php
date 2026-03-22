@@ -52,6 +52,13 @@ final class StepsConfig
                 'description' => 'Extract lines from a plain text file as rows.'
             ],
             [
+                'id' => 'extractor-6',
+                'type' => self::TYPE_EXTRACTOR,
+                'name' => 'Tesseract OCR',
+                'object' => 'TesseractOcrExtractor',
+                'description' => 'Extract text from an image file (PNG, JPEG, TIFF, etc.) using Tesseract OCR. Each text line becomes one row.'
+            ],
+            [
                 'id' => 'transformer-1',
                 'type' => self::TYPE_TRANSFORMER,
                 'name' => 'Convert Case',

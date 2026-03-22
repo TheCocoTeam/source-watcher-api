@@ -4,7 +4,7 @@
 FROM php:8.4-apache
 
 RUN apt-get update -y && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends libzip-dev libpq-dev libonig-dev \
+    && apt-get install -y --no-install-recommends libzip-dev libpq-dev libonig-dev tesseract-ocr \
     && docker-php-ext-install pdo_mysql mysqli mbstring zip pdo_pgsql pgsql \
     && a2enmod rewrite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
