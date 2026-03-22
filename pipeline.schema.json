@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/main/pipeline.schema.json",
+  "$id": "https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/master/pipeline.schema.json",
   "title": "Source Watcher Pipeline",
   "description": "A Source Watcher pipeline definition: an ordered list of extractor, transformer, and loader steps.",
   "type": "object",

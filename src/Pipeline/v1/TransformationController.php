@@ -191,7 +191,7 @@ class TransformationController extends Controller
         // Persist the pipeline as a JSON object with a $schema reference, following the same
         // directory structure as Coco\SourceWatcher\Core\Pipeline\SourceWatcher::save().
         $pipeline = [
-            '$schema' => 'https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/main/pipeline.schema.json',
+            '$schema' => 'https://raw.githubusercontent.com/TheCocoTeam/source-watcher-api/master/pipeline.schema.json',
             'steps'   => $steps,
         ];
         $jsonRepresentation = json_encode($pipeline, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
