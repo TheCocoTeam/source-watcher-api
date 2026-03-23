@@ -228,6 +228,40 @@ class RunTransformationController extends Controller
                             $extractorOptions['column'] = $column;
                         }
                         $sourceWatcher->extract('Txt', $input, $extractorOptions);
+                    } elseif ($name === 'TesseractOcr') {
+                        $filePath = $options['filePath'] ?? '';
+                        if ($filePath === '') {
+                            throw new SourceWatcherException('TesseractOcr extractor requires options.filePath.');
+                        }
+                        $input = new FileInput($filePath);
+                        $extractorOptions = [];
+                        $column = isset($options['column']) && is_string($options['column']) ? trim($options['column']) : '';
+                        if ($column !== '') {
+                            $extractorOptions['column'] = $column;
+                        }
+                        $language = isset($options['language']) && is_string($options['language']) ? trim($options['language']) : '';
+                        if ($language !== '') {
+                            $extractorOptions['language'] = $language;
+                        }
+                        $sourceWatcher->extract('Tesseract_Ocr', $input, $extractorOptions);
+                    } elseif ($name === 'Pdf') {
+                        $filePath = $options['filePath'] ?? '';
+                        if ($filePath === '') {
+                            throw new SourceWatcherException('Pdf extractor requires options.filePath.');
+                        }
+                        $input = new FileInput($filePath);
+                        $extractorOptions = [];
+                        $column = isset($options['column']) && is_string($options['column']) ? trim($options['column']) : '';
+                        if ($column !== '') {
+                            $extractorOptions['column'] = $column;
+                        }
+                        $language = isset($options['language']) && is_string($options['language']) ? trim($options['language']) : '';
+                        if ($language !== '') {
+                            $extractorOptions['language'] = $language;
+                        }
+                        $pageColumn = isset($options['pageColumn']) && is_string($options['pageColumn']) ? $options['pageColumn'] : 'page';
+                        $extractorOptions['pageColumn'] = $pageColumn;
+                        $sourceWatcher->extract('Pdf', $input, $extractorOptions);
                     } elseif ($name === 'Database') {
                         $driver = $options['driver'] ?? 'pdo_mysql';
                         $query = isset($options['query']) && is_string($options['query']) ? trim($options['query']) : '';
