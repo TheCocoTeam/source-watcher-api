@@ -1,6 +1,6 @@
 # Source Watcher API
 
-REST API for the [Source Watcher](https://github.com/TheCocoTeam/source-watcher-dev-env) project. It provides authentication (JWT + refresh tokens), database migrations, and HTTP endpoints used by [Source Watcher Board](https://github.com/TheCocoTeam/source-watcher-board) and other clients. The API uses [Source Watcher Core](https://github.com/TheCocoTeam/source-watcher-core) for ETL pipelines when that functionality is wired in.
+REST API for the [Source Watcher](https://github.com/TheCocoTeam/source-watcher-dev-env) project. It provides authentication (JWT + refresh tokens), database migrations, and HTTP endpoints used by [Source Watcher Board](https://github.com/TheCocoTeam/source-watcher-board) and other clients. The API uses [Source Watcher Core](https://github.com/TheCocoTeam/source-watcher-core) to run ETL pipelines (extract, transform, load) exposed via transformation and step endpoints.
 
 ## Requirements
 
